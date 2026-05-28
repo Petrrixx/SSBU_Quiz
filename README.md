@@ -89,7 +89,7 @@ Public Domain - voľne distribuovateľné a modifikovateľné
 
 ## 👤 Autor
 
-Vytvorené na UK - príspevok k učebnému procesu
+Vytvorené na FRI UNIZA - príspevok k učebnému procesu
 
 ## 🤝 Kontribúcie
 
