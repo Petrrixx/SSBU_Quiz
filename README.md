@@ -1,6 +1,6 @@
 # 📚 SSBU Quiz - Kartičkový Systém
 
-Interaktívny kartičkový systém na prípravu na skúšku **Structural and Sequence Biology for Bioinformatics (SSBU)** na UK.
+Interaktívny kartičkový systém na prípravu na skúšku **Softvérove spracovanie biomedicínskych údajov (SSBU)** na FRI UNIZA.
 
 ## 🎯 O aplikácii
 
