@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSBU Quiz - Kartičkový Systém</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .course-selector {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+
+        .course-btn {
+            padding: 12px 20px;
+            border: 2px solid white;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            cursor: pointer;
+            border-radius: 25px;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .course-btn:hover {
+            background: rgba(255,255,255,0.4);
+            transform: translateY(-2px);
+        }
+
+        .course-btn.active {
+            background: white;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .card-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            padding: 40px;
+            min-height: 500px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .card-header {
+            margin-bottom: 30px;
+        }
+
+        .card-title {
+            color: #667eea;
+            font-size: 1.8em;
+            margin-bottom: 5px;
+        }
+
+        .card-info {
+            color: #999;
+            font-size: 0.95em;
+        }
+
+        .question-counter {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            margin-left: 10px;
+        }
+
+        .question-text {
+            font-size: 1.3em;
+            color: #333;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .answer-container {
+            background: #f0f0f0;
+            border-radius: 10px;
+            padding: 20px;
+            min-height: 100px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .answer-container::before {
+            content: 'Klikni na odpoveď →';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #999;
+            font-size: 0.9em;
+            text-align: center;
+            width: 100%;
+        }
+
+        .answer-container.revealed::before {
+            display: none;
+        }
+
+        .answer-container:not(.revealed) {
+            background: linear-gradient(135deg, #e0e0e0, #f5f5f5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 120px;
+        }
+
+        .answer-container:not(.revealed):hover {
+            background: linear-gradient(135deg, #d0d0d0, #e5e5e5);
+            transform: scale(1.02);
+        }
+
+        .answer-text {
+            color: #333;
+            font-size: 1.1em;
+            line-height: 1.8;
+            display: none;
+        }
+
+        .answer-container.revealed .answer-text {
+            display: block;
+        }
+
+        .navigation {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 40px;
+            gap: 10px;
+        }
+
+        .nav-btn {
+            padding: 12px 25px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .nav-btn:hover:not(:disabled) {
+            background: #764ba2;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .nav-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .nav-info {
+            color: #666;
+            font-weight: 500;
+            min-width: 120px;
+            text-align: center;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: #e0e0e0;
+            border-radius: 2px;
+            overflow: hidden;
+            margin-bottom: 30px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.3s ease;
+        }
+
+        .keyboard-hint {
+            text-align: center;
+            color: #999;
+            font-size: 0.85em;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .card-container {
+                padding: 20px;
+                min-height: 400px;
+            }
+
+            .question-text {
+                font-size: 1.1em;
+            }
+
+            .course-selector {
+                gap: 8px;
+            }
+
+            .course-btn {
+                padding: 10px 15px;
+                font-size: 0.9em;
+            }
+
+            .navigation {
+                flex-direction: column;
+            }
+
+            .nav-btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📚 SSBU Quiz</h1>
+            <p>Testovací kartičkový systém pre prípravu na skúšku</p>
+        </div>
+
+        <div class="course-selector" id="courseSelector"></div>
+
+        <div class="card-container">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+
+            <div class="card-header">
+                <div class="card-title" id="courseTitle"></div>
+                <div class="card-info">
+                    <span id="questionNumber"></span>
+                    <span class="question-counter" id="questionCounter"></span>
+                </div>
+            </div>
+
+            <div class="question-text" id="questionText"></div>
+
+            <div class="answer-container" id="answerContainer">
+                <div class="answer-text" id="answerText"></div>
+            </div>
+
+            <div class="navigation">
+                <button class="nav-btn" id="prevBtn">← Predchádzajúca</button>
+                <div class="nav-info" id="navInfo"></div>
+                <button class="nav-btn" id="nextBtn">Ďalšia →</button>
+            </div>
+
+            <div class="keyboard-hint">
+                💡 Tipy: Klikni na odpoveď aby sa odkryla | Použi šípky ← → na navigáciu
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Dáta s otázkami
+        const quizData = {
+            'Prednáška 1': {
+                title: 'Úvod do bioinformatiky a spracovania údajov',
+                questions: [
+                    {
+                        q: 'Čo je veda?',
+                        a: 'Formulovanie hypotéz, vyvodzovanie predpovedí a ich testovanie.'
+                    },
+                    {
+                        q: 'Vymenujte a zoradte 7 krokov životného cyklu biomedicínskych údajov s príkladom.',
+                        a: '1. PLÁNOVANIE A NÁVRH - definovanie cieľov\n2. ZBER A VYTVORENIE - zbieranie vzoriek, DNA\n3. ANALÝZA A SPOLUPRÁCA - spracovanie dát\n4. UKLADANIE A SPRAVOVANIE - bezpečné uskladnenie\n5. HODNOTENIE A ARCHIVOVANIE - kontrola kvality\n6. ZDIEĽANIE A VYHODNOCOVANIE - publikovanie\n7. ZVEREJŇOVANIE A ZNOVUPOUŽITEĽNOSŤ - dostupnosť pre výskum'
+                    },
+                    {
+                        q: 'Aké sú tri spôsoby uvažovania?',
+                        a: 'Induktívne (na základe pozorovaní navrhujem všeobecný záver), Deduktívne (logický sled dôkazov) a Abduktívne (hypotetický záver).'
+                    },
+                    {
+                        q: 'Čo je vedecká metóda a jej 6 úkonov?',
+                        a: '1. Pozorovanie javu\n2. Získanie dostatočného množstva informácií\n3. Formulovanie hypotézy\n4. Experimentálne testovanie\n5. Analýza a vyhodnotenie výsledkov\n6. Formulovanie záverov'
+                    },
+                    {
+                        q: 'Čo je Luria-Delbruck experiment a čo testoval?',
+                        a: 'Experiment z roku 1943 testujúci či mutácie vznikajú náhodne alebo sú odpoveďou na zmenu prostredia. Infikovanie bakterií bakteriofágom a vznik odolnosti na vírus.'
+                    },
+                    {
+                        q: 'Čo je bioinformatika a jej definícia?',
+                        a: 'Prienik biológie, informatiky a matematiky - využívanie počítačov na analýzu biologických údajov. Interdisciplinárna oblasť vyvíjajúca metódy a SW nástroje na pochopenie biologických dát.'
+                    },
+                    {
+                        q: 'Aké sú tri prístupy bioinformatického výskumu?',
+                        a: '1. ANALÝZA ÚDAJOV - prechod od nespracovaných k čistým údajom až po štatistické výsledky\n2. VÝVOJ SW - softvér na bioinfomatické analýzy a nezávislé knižnice\n3. MODELOVANIE - vykonávanie simulácií'
+                    },
+                    {
+                        q: 'Aké sú hlavné úlohy a zodpovednosti bioinformatika?',
+                        a: 'ÚLOHY: Poskytnutie odpovedí, hľadanie zmyslu v údajoch, klinicky použiteľné riešenia\nZODPOVEDNOSTI: Indexovanie a kategorizácia údajov, vytvorenie dostupnosti pre najpresnejšiu odpoveď'
+                    }
+                ]
+            },
+            'Prednáška 2': {
+                title: 'Databázy na uchovávanie biomedicínskych údajov',
+                questions: [
+                    {
+                        q: 'Čo je databáza medicínskych údajov? Aké sú jej charakteristiky?',
+                        a: 'Údaje o pacientoch a ich zdravotnom stave - CITLIVÉ údaje podliehajúce nariadeniam a zákonom na ochranu.'
+                    },
+                    {
+                        q: 'Čo sú biobanky? Aké sú ich úlohy a typy?',
+                        a: 'Úložiská údajov biomedicínskeho charakteru na výskum s reálnymi vzorkami.\nÚLOHY: Uchovávanie, digitálne spracovanie, digitalizácia\nTYPY: Krvné, Populačné, Tkanivové, Digitálne, Organoidné, Bunkové'
+                    },
+                    {
+                        q: 'Čo sú výskumné databázy a aký je ich účel?',
+                        a: 'Anonymizované údaje biomedicínskeho charakteru určené na výskum - väčšinou voľne prístupné. Slúžia na prvotné získanie informácií na identifikáciu problémov.'
+                    },
+                    {
+                        q: 'Aká je hlavná priorita databázových systémov v zdravotníctve?',
+                        a: 'BEZPEČNOSŤ - monitoring DB pomocou SW nástrojov (DPA, DPM, SAM) a automatické monitorovanie.'
+                    },
+                    {
+                        q: 'Čo sú základné princípy biobanky z organizačného pohľadu?',
+                        a: 'RIADENIE, ZABEZPEČENIE KVALITY, SPRÁVA ÚDAJOV, ETICKY-PRÁVNE OTÁZKY. Využitím viacerých štandardov dosahujeme lepšiu kvalitu.'
+                    },
+                    {
+                        q: 'Čo je BBMRI-ERIC a aké služby poskytuje?',
+                        a: 'Výskumná infraštruktúra v EU pre biobanky. Poskytuje: Etické a právne poradenstvo, Nástroje a SW, Adresár, Vyjednávač, Lokátor údajov.'
+                    },
+                    {
+                        q: 'Čo je NCBI a čo poskytuje?',
+                        a: 'National Centre for Biotechnology Information - Zakláda verejné databázy (GenBank, RefSeq, PubMed), vyvíja SW nástroje (ENTREZ, BLAST), vzdelanie v bioinformatike.'
+                    },
+                    {
+                        q: 'Čo je EBI a ako sa líši od NCBI?',
+                        a: 'European Bioinformatics Institute - Poskytuje voľne dostupné údaje a bioinformatické služby (FASTA, BLAST, MUSCLE). Fokus na Európu oproti NCBI (USA).'
+                    }
+                ]
+            },
+            'Prednáška 3': {
+                title: 'Základné algoritmy a štatistické vyhodnotenie',
+                questions: [
+                    {
+                        q: 'Čo je populácia v štatistike? Uveď príklad.',
+                        a: 'Množina všetkých individuálnych objektov záujmu. PRÍKLAD: Všetci nakazení COVID-19 na Slovensku.'
+                    },
+                    {
+                        q: 'Čo je vzorka v štatistike? Uveď príklad.',
+                        a: 'Podmnožina populácie - náhodný výber. PRÍKLAD: Náhodne vybraní ľudia nakazení COVID-19 zo Slovenska.'
+                    },
+                    {
+                        q: 'Čo je premená v štatistike? Aké sú jej typy?',
+                        a: 'Akákoľvek merateľná charakteristika ktorá sa líši medzi členmi vzorky/populácie.\nTYPY: KVANTITATÍVNE (diskrétne-počty, spojité-hmotnosť), KVALITATÍVNE (vlastnosti muž/žena).'
+                    },
+                    {
+                        q: 'Aký je rozdiel medzi normalizáciou a štandardizáciou údajov?',
+                        a: 'NORMALIZÁCIA: Škálovanie dát do rozsahu 0-1. Vzorec: (x-min)/(max-min)\nSTANDARDIZÁCIA: Transformácia na priemer 0 a štand.odchýlka 1. Vzorec: (x-priemer)/smerod.odchýlka'
+                    },
+                    {
+                        q: 'Čo je medián a prečo je lepší ako priemer?',
+                        a: 'Medián je hodnota uprostred zoradených dát. Je robustnejší a štatisticky spoľahlivejší ako priemer - odolný voči extrémnym hodnotám.'
+                    },
+                    {
+                        q: 'Čo je Studentov T-Test a kedy sa používa?',
+                        a: 'Test na určenie či je rozdiel medzi DVOMA skupinami značajný.\nH0 = skupinové priemery sú rovnaké\nH1 = skupinové priemery sa líšia\nVyžaduje normálne rozdelenie dát.'
+                    },
+                    {
+                        q: 'Čo je ANOVA a aké sú jej typy?',
+                        a: 'Analýza rozptylu - test na rozdiel medzi VIAC AKO DVOMA skupinami.\nH0 = všetky skupiny majú rovnaký priemer\nH1 = aspoň jedna sa líši\nTYPY: Jednosmerná (1 faktor), Obojsmerná (2 faktory)'
+                    },
+                    {
+                        q: 'Čo je K-means zhlukovanie a na čo sa používa?',
+                        a: 'Metóda zhlukovania ktorá delí dáta do K zhlukov - vzorka je priradená k zhluku s najbližším stredom. VYUŽITIE: Zoskupovanie podobne exprimovaných génov.'
+                    }
+                ]
+            },
+            'Prednáška 4': {
+                title: 'Softvérové nástroje na analýzu biomedicínskych údajov',
+                questions: [
+                    {
+                        q: 'Aké sú základné typy analytických nástrojov?',
+                        a: 'Databázy (EBI, NCBI), Online nástroje (MetaboAnalyst, Galaxy), Desktopové nástroje (FamLinkX, IGV, Chipster), Špecializované nástroje.'
+                    },
+                    {
+                        q: 'Popíšte Zeiss AxioVision/Zen na zobrazovanie tkanív.',
+                        a: 'Softvér na analýzu tkanív s funkciami: Získavanie obrazu, Spracovanie obrazu, Analýza obrazu, Archivácia. Pokročilé: Dekonvolúcia, 4D dimenzionalita, skriptovanie VBA.'
+                    },
+                    {
+                        q: 'Čo je ImageJ/Fiji a aké sú jeho vlastnosti?',
+                        a: 'OpenSource software na analýzu obrázkov - založený na Jave. Pluginy: BigSataViewer (HDF5), ClearVolume (3D), SciView (3D s AR). Ľahko rozšíriteľný.'
+                    },
+                    {
+                        q: 'Popíšte Imaris - komerčný nástroj na 3D analýzu.',
+                        a: 'Komerčný 3D software s: Automatickou detekciou buniek, Sledovačom filamentov, Lokalizačnou analýzou, Dekonvolúciou. Prepojenie na R, Matlab, Python. Vyžaduje kvalitný HW.'
+                    },
+                    {
+                        q: 'Čo je CellProfiler a na čo sa používa?',
+                        a: 'OpenSource software na kvantitatívnu analýzu biologických snímok. Umožňuje automaticky a kvantitatívne merať fenotypy z tisícov obrázkov. Ľahko použiteľný.'
+                    },
+                    {
+                        q: 'Čo je FlowJo a jeho užitie?',
+                        a: 'Software (TreeStar) na analýzu prietokovej cytometrie. Funkcie: Manuálna organizácia, Analýza a generovanie správ. Štatistiky, Špecializované analýzy DNA cyklu.'
+                    },
+                    {
+                        q: 'Čo je Matlab a aké sú jeho aplikácie v bioinformatike?',
+                        a: 'Prostredie pre numerické výpočty, vizualizáciu a programovanie. Knižnice: Computational ToolBox, Simulink. Využitie: Obrazové analýzy, Štatistika, Modelovanie.'
+                    },
+                    {
+                        q: 'Aké sú hlavné rozdiely medzi komerčnými (Imaris, Vision4D) a open-source (ImageJ, Vaa3D) nástrojmi?',
+                        a: 'KOMERČNÉ: Vyšší výkon, profesionálna podpora, drahší, často vyžaduje kvalitný HW\nOPEN-SOURCE: Bezplatné, komunita, rozšíriteľné, nižší výkon, vlastná podpora'
+                    }
+                ]
+            },
+            'Prednáška 5': {
+                title: 'Fylogenetické stromy',
+                questions: [
+                    {
+                        q: 'Čo je fylogenetika a jej cieľ?',
+                        a: 'Odbor venujúci sa systematickej biológii - študuje evolučné vzťahy medzi organizmami pomocou genetických údajov, kvantitatívnych znakov a morfológie.'
+                    },
+                    {
+                        q: 'Čo je fylogenetický strom a čo zobrazuje?',
+                        a: 'Diagram vetvenia zobrazujúci evolučné vzťahy medzi biologickými druhmi na základe podobnosti a rozdielov v genetických/fyzických vlastnostiach.'
+                    },
+                    {
+                        q: 'Vymenuj a popíšte 4 typy fylogenetických stromov.',
+                        a: '1. ROZDVOJENÉ - každé 2 vetvy spojené vnútorným uzlom\n2. DENDOGRAM - zovšeobecnenie pre všetky dáta\n3. FYLOGRAM - dĺžka vetvy = váha vlastnosti\n4. CHRONOGRAM - vetva = evolučný čas'
+                    },
+                    {
+                        q: 'Čo je molekulárna fylogenetika?',
+                        a: 'Používa molekulárne údaje ako DNA a proteínové sekvencie na odvodzovanie fylogenéz a evolučných vzťahov.'
+                    },
+                    {
+                        q: 'Aké sú kroky tvorby fylogenetického stromu?',
+                        a: '1. Výber sekvencií (BLAST formát)\n2. Zarovnanie sekvencií (CLUSTAL, MUSCLE, Galaxy)\n3. Odhad zostavenia - pomocou matice vzdialenosti alebo vlastností\n4. Vytvorenie koreňového stromu\n5. Vizualizácia stromu'
+                    },
+                    {
+                        q: 'Čo je matica vzdialeností pri tvorbe fylogenetického stromu?',
+                        a: 'Tabuľka zobrazujúca evolučné vzdialenosti medzi párovými sekvenciami alebo taxónmi - podklad pre konštrukciu stromu.'
+                    },
+                    {
+                        q: 'Čo je maximálna šetrnosť a ďalšie kritéria pri hľadaní stromu?',
+                        a: 'Optimalizačné kritéria - skóre pre každý strom. KRITÉRIA: Maximálna šetrnosť (minimalizácia zmien), Maximálna pravdepodobnosť, Minimálna evolúcia.'
+                    },
+                    {
+                        q: 'Čo je iTOL a na čo sa používa?',
+                        a: 'Interactive Tree of Life - nástroj na interaktívnu vizualizáciu a úpravu fylogenetických stromov. Zobrazuje strom života s taxonómiou.'
+                    }
+                ]
+            },
+            'Prednáška 6': {
+                title: 'Sekvenovanie DNA, RNA a praktické využitie',
+                questions: [
+                    {
+                        q: 'Čo je sekvenovanie a jeho hlavný účel?',
+                        a: 'Určenie primárnej štruktúry - určenie poradia nukleotidov v DNA reťazci. Na základe DNA vieme odvodiť sekvencie RNA a proteínov.'
+                    },
+                    {
+                        q: 'Kedy bola prvá sekvencia a aký bol jej rozsah?',
+                        a: 'Rok 1965 - prvá sekvencia molekuly nukleovej kyseliny bola 77 nukleotidov z pekárskej kvasinky.'
+                    },
+                    {
+                        q: 'Aké sú 2 základné techniky sekvenovania z roku 1977?',
+                        a: '1. CHEMICKÁ METÓDA (Maxam, Gilbert) - rádioaktívne označenie a chemická modifikácia\n2. ENZYMATICKÁ METÓDA (Sanger) - dideoxy sekvenovanie s ddNTP'
+                    },
+                    {
+                        q: 'Vymenuj a popíšte rozdiely medzi chemickou a enzymatickou metódou sekvenovania.',
+                        a: 'CHEMICKÁ: Modifikácia DNA s DMS, hydrazín, chemické štiepenie, toxické chemikálie, nemožno automatizovať\nENZYMATICKÁ: ddNTP nukleotidy zastavujú rast reťazca, automatizovateľná, neskôr fluorescenčné značenie'
+                    },
+                    {
+                        q: 'Čo je dideoxy sekvenovanie (Sangerova metóda)?',
+                        a: 'Enzymácká metóda - využíva ddNTP (dideoxynukleotidy) ktoré sa môžu pripojiť ale nemajú funkčný 3´-koniec, tým zastavujú rast reťazca.'
+                    },
+                    {
+                        q: 'Vymenuj a popíšte 2 stratégie analýzy dlhších úsekov DNA.',
+                        a: '1. PRIMER-WALKING: Zo sekvencie sa pripraví špecifický primer pre nasledujúcu fázu - pomalšia, pre kratšie úseky\n2. SHOTGUN: DNA fragmentovaná na krátke úseky v plazmidoch, náhodný výber klonov, univerz. primery, kvalitnejšie'
+                    },
+                    {
+                        q: 'Čo je Projekt HGP a aké boli jeho výsledky?',
+                        a: 'Human Genome Project (1990-2003) - sekvenovanie ľudského genómu. Výsledok: Referenčná sekvencia pokrývajúca 99% genómu s presnosťou 99,99%.'
+                    },
+                    {
+                        q: 'Čo je redundancia pri sekvenovaní a jej výpočet?',
+                        a: 'Dôležitý parameter - odhad frakcie genómu ktorá chýba. Vzorec: P0 = e^(-m), kde m = podiel celkového objemu sekvenčných dát a dĺžky genómu.'
+                    }
+                ]
+            },
+            'Prednáška 7': {
+                title: 'Bioinformatické spracovanie dát - štatistické vyhodnotenie čipov',
+                questions: [
+                    {
+                        q: 'Čo je microarray (DNA čip) a ako funguje?',
+                        a: 'Technológia na meranie génových expresií. Na sklíčko sú nanesené tisíce DNA sond, ktoré sa hybrididizujú s rádiovo značenými vzorkami. Intenzita fluorescencie = úroveň génovej expresie.'
+                    },
+                    {
+                        q: 'Popíšte kroky spracovaní microarray dát.',
+                        a: '1. NAČÍTANIE - čítanie CEL súborov, 2. NORMALIZÁCIA - RMA, MAS5, GCRMA metódy, 3. FILTRÁ - odstránenie nízkych signálov, 4. ŠTATISTICKÁ ANALÝZA - t-test, ANOVA, 5. VIZUALIZÁCIA - heatmapy, PCA.'
+                    },
+                    {
+                        q: 'Čo je Affymetrix GeneChip a ako sa líši od iných čipov?',
+                        a: 'Najrozšírenejší typ s 6,5 milióna buniek. Má PM (Perfect Match) a MM (Mismatch) sondy. PM = cieľ, MM = mierka špecificity. Iné čipy: Illumina (fiber-optic array), Agilent (microrray na sklíčku).'
+                    },
+                    {
+                        q: 'Čo je normalizácia v microarray analýze? Menovajte 3 metódy.',
+                        a: 'Odstránenie technických artefaktov bez zmeny biologických rozdielov.\nMETÓDY: 1. MAS5 - porovnávanie PM/MM párov, 2. RMA - robustný fit modelu, 3. GCRMA - GCContent Robust Multi-Array.'
+                    },
+                    {
+                        q: 'Čo je KEGG Pathway a aké informácie poskytuje?',
+                        a: 'Databáza biologických dráh. Obsahuje: metabolické dráhy (enzymatické reakcie), signalizáčné dráhy (buňková komunikácia), génové regulácie (vrátane transkripčných faktorov).'
+                    },
+                    {
+                        q: 'Popíšte formáty súborov zo sekvenátorov a ich použitie.',
+                        a: 'FASTA - sekvencia (>header, ACGT), FASTQ - sekvencia + kvalita, SAM - zarovnané sekvencie (čitateľný), BAM - SAM v binárnom formáte, VCF - varianty, BED - genomické regióny.'
+                    },
+                    {
+                        q: 'Čo je Galaxy a čo sú jeho hlavné vlastnosti?',
+                        a: 'Webová platforma pre bioinformatickú analýzu. VLASTNOSTI: Bez inštalácie, Workflow editor, História zmien, Zdieľanie analýz, Integrácia s verejnými databázami.'
+                    },
+                    {
+                        q: 'Aký je rozdiel medzi raw a processed microarray dátami?',
+                        a: 'RAW: Primárne intenzity fluorescencie bez úprav, obsahuje technické artefakty. PROCESSED: Normalizované, log-transformované, priame na analýzu génových expresií.'
+                    }
+                ]
+            },
+            'Prednáška 8': {
+                title: 'Zarovnávanie sekvencií DNA',
+                questions: [
+                    {
+                        q: 'Čo je zarovnávanie sekvencií a aký je jeho biologický zmysel?',
+                        a: 'Forma zobrazenia podobností medzi sekvenciami, kde pomlčky predstavujú gaps (deletions/insertions). ZMYSEL: Identifikácia homologických pozícií, evolučných vzťahov, funkčných domén.'
+                    },
+                    {
+                        q: 'Rozdiel medzi globálnym a lokálnym zarovnaním s príkladmi.',
+                        a: 'GLOBÁLNE: Zarovnávajú sa CELÉ sekvencie (Needleman-Wunsch), vrátane krívav a koniec. LOKÁLNE: Zarovnávajú sa len NAJPODOBNEJŠIE OBLASTI (Smith-Waterman, BLAST), ignorujú rozdielne časti.'
+                    },
+                    {
+                        q: 'Popíšte princíp dynamického programovania pri zarovnávaní.',
+                        a: 'Vytvára sa NxM matica (N,M = dĺžka sekvencií). Každá bunka = max skóre dosiaľ. Recidencia: M[i,j] = max(diagonal+skóre, hore-gap, vľavo-gap). Spätne trasovanie = zarovnanie.'
+                    },
+                    {
+                        q: 'Čo je skórovacia matica a názovte 3 typy.',
+                        a: 'Tabuľka hodnôt pre každú substitúciu. TYPY:\n1. IDENTITY - +1 match, -1 mismatch\n2. BLOSUM (Block Substitution Matrix) - biologicky motivované, BLOSUM62 pre aminokyseliny\n3. PAM (Point Accepted Mutation) - založené na evolučných modeloch.'
+                    },
+                    {
+                        q: 'Čo je gap penalty a ako to ovplyvňuje zarovnanie?',
+                        a: 'Penalta za vloženie pomlčky (gap). LINEAR: -d*k (d=gap cost, k=dĺžka). AFFINE: -d-e*k (d=otvorenie, e=extension).\nVYPLYV: Nízka penalta = viac gaps, vysoká penalta = lepšie zarovnanie ale menej homológov.'
+                    },
+                    {
+                        q: 'Čo je Needleman-Wunsch algoritmus a na čo sa používa?',
+                        a: 'Algoritmus dynamického programovania na GLOBÁLNE zarovnávanie (1970). POSTUP: 1. Inicializácia prvého riadku/stĺpca, 2. Vypĺnenie matice, 3. Spätné trasovanie. POUŽITIE: Zarovnávanie ortologických génov, komparácia organizmov.'
+                    },
+                    {
+                        q: 'Čo je Smith-Waterman algoritmus a ako sa líši od NW?',
+                        a: 'Algoritmus na LOKÁLNE zarovnávanie. ROZDIEL: Inicializácia na 0, pri záporných hodnotách = 0 (zahodenie slabého zarovnania). VÝHODA: Nájde len najlepšie časti, ignoruje rozdielne oblasti.'
+                    },
+                    {
+                        q: 'Čo je BLAST a aké sú jeho varianty?',
+                        a: 'Basic Local Alignment Search Tool - heuristický algoritmus na rýchle hľadanie.\nVARIANTY: nucleotide-BLAST (DNA), protein-BLAST (AMK), PSI-BLAST (iteratívny), BLAT (genomické zarovnania).\nVÝHODA: Rýchly, hľadá len vysokoskoringové zarovnania.'
+                    }
+                ]
+            },
+            'Cviko 1': {
+                title: 'Úvod do SW nástrojov pre analýzu biomedicínskych dát',
+                questions: [
+                    {
+                        q: 'Aké je hlavné poslanie databáz v bioinformatike?',
+                        a: 'PRIMÁRNE: Získanie informácií na identifikáciu problému a formulovanie hypotéz\nSEKUNDÁRNE: Získanie dostatočného množstva údajov na experimenty a ich validáciu.'
+                    },
+                    {
+                        q: 'Čo sú metadatabázy a ich úloha?',
+                        a: 'Databázy zhromažďujúce ÚDAJE O ÚDAJOCH - metainformácie. Majú kľúčovú úlohu pri generovaní nových údajov a lepšej organizácii existujúcich.'
+                    },
+                    {
+                        q: 'Vymenuj najznámejšie databázy v genetike.',
+                        a: 'EBI (European Bioinformatics Institute)\nNCBI (National Centre for Biotechnology Information)\nDNA Databank of Japan'
+                    },
+                    {
+                        q: 'Čo sú štandardy v bioinformatike? Uveď 4 príklady.',
+                        a: 'Protokoly na štruktúrovanie, ukladanie a výmenu údajov.\nPRÍKLADY:\n- DICOM: Medicínske obrazové údaje\n- FASTA: DNA sekvencie\n- SNOMED CT: Klinická terminológia\n- HL7: Klinické a administratívne dáta'
+                    },
+                    {
+                        q: 'Aké sú typy nástrojov na analýzu biomedicínskych dát?',
+                        a: 'ONLINE: Galaxy, GenePattern\nDESKTOPOVÉ: PyMOL, GeniousPrime\nPROGRAMOVACIE JAZYKY: Python, Matlab, R, C++'
+                    },
+                    {
+                        q: 'Na čo sa musíme zamerať pri výbere správneho analytického nástroja?',
+                        a: 'TYP ÚDAJOV: Obrazové, textové, numerické\nALGORITMY: Potrebné metódy pre spracovanie\nMETRIKY: Metriky na vyhodnocovanie\nKOMPATIBILITA: S existujúcim prostredím'
+                    },
+                    {
+                        q: 'Čo je vizualizácia údajov a jej cieľ?',
+                        a: 'CIEĽ: Pochopenie štruktúry a distribúcie údajov\n- Identifikácia vzorcov a anomálií\n- Rýchlejšia orientácia a interpretácia\n- Lepšie rozhodovanie na základe dát'
+                    },
+                    {
+                        q: 'Vymenuj nástroje a knižnice na vyhodnocovanie výsledkov.',
+                        a: 'NÁSTROJE: Prism, SAS, SPSS, Tableau\nKNIŽNICE:\n- PYTHON: Numpy, Pandas, Matplotlib, Seaborn\n- R: ggplot2, dplyr, caret\n- MATLAB: Statistics and Machine Learning Toolbox'
+                    }
+                ]
+            },
+            'Cviko 2': {
+                title: 'SW nástroje na analýzu biomedicínskych údajov',
+                questions: [
+                    {
+                        q: 'Čo je metabolit a aké sú jeho typy?',
+                        a: 'Chemická látka ktorá je súčasťou metabolických procesov.\nTYPY: Malé molekuly (cukry, AMK, lipidy), Veľké molekuly (enzýmy, hormóny).'
+                    },
+                    {
+                        q: 'Čo sú metabolické údaje a čo zahŕňajú?',
+                        a: 'Kvantitatívne údaje o metabolických procesoch a metabolitoch.\nZAHŘÑA: Koncentrácie metabolitov, Enzýmové aktivity, Glukóza v krvi, Lipidy, Kyselina močová.'
+                    },
+                    {
+                        q: 'Čo je MetaboAnalyst? Popíšte jeho 4 moduly.',
+                        a: 'Bezplatný online nástroj na analýzu metabolických dát.\nMODULY:\n1. SPRACOVANIE DÁT - čistenie a príprava\n2. ŠTATISTICKÁ ANALÝZA - ANOVA, t-test\n3. ANALÝZA FUNKČNÉHO OBOHATENIA\n4. ANALÝZA METABOLICKÝCH DRÁH'
+                    },
+                    {
+                        q: 'Čo je jednofaktorová štatistická analýza?',
+                        a: 'Porovnanie významných rozdielov v JEDNEJ kategorickej premennej (faktor) medzi dvoma alebo viacerými skupinami.\nH0: Neexistujú rozdiely\nH1: Aspoň jedna skupina sa líši'
+                    },
+                    {
+                        q: 'Čo je PCA (Principal Component Analysis)?',
+                        a: 'Redukcia dimenzionality údajov nájdením HLAVNÝCH KOMPONENTOV.\nCIEĽ: Nájsť nové nezávislé premenné, ktoré zachytávajú čo najväčšiu varianciu pôvodných dát.'
+                    },
+                    {
+                        q: 'Čo je PLS-DA (Partial Least Squares Discriminant Analysis)?',
+                        a: 'Nástroj na KLASIFIKÁCIU a rozlišovanie dát medzi skupinami.\nCIEĽ: Identifikovať vzory a komponenty, ktoré najlepšie oddeľujú jednotlivé triedy.'
+                    },
+                    {
+                        q: 'Čo je Cross-Validation a ako sa používa?',
+                        a: 'Rozdelenie datasetu na niekoľko rovnakých časti.\nPROCES: Trénovanie/testovanie rôznych kombinácií\nMETRIKY: R2 (variancia modelom), Q2 (z krížovej validácie), Accuracy'
+                    },
+                    {
+                        q: 'Aký je rozdiel medzi T-Testom a Wilcoxon rank-sum testom?',
+                        a: 'T-TEST: Parametrický, vyžaduje normálne rozdelenie a rovnakú variabilitu\nWILCOXON: Neparametrický, nevyžaduje normálne rozdelenie, porovnáva distribúcie'
+                    }
+                ]
+            },
+            'Cviko 5': {
+                title: 'Fylogenetické Stromy',
+                questions: [
+                    {
+                        q: 'Čo je fylogenetika a aký je jej praktický dosah?',
+                        a: 'Veda o evolučných vzťahoch medzi organizmami/génmi.\nDOSAH: Pochopenie evolúcie, zachovanie biodiverzity, epidémiológia (tracking vírií), vývoj vakcín, diagnostika (ktorý patogén).'
+                    },
+                    {
+                        q: 'Popíšte všetky 5 krokov tvorby fylogenetického stromu.',
+                        a: '1. VÝBER SEKVENCIÍ - BLAST hľadanie homologických génov\n2. VIACNÁSOBNÉ ZAROVNANIE - CLUSTAL/MUSCLE/MAFFT\n3. ODHAD STROMU - Neighbor-Joining, Maximum Likelihood, Bayesian\n4. ROZKORENENIE - určenie spoločného predka\n5. VALIDÁCIA - Bootstrap test, Jackknife'
+                    },
+                    {
+                        q: 'Aké sú 4 typy fylogenetických stromov a ich charakteristiky?',
+                        a: '1. BIFURKAČNÝ (dichotomický) - každý uzol má 2 vetvy, najčastejší\n2. POLYTÓMNY - uzly s >2 vetvami (iba v niektorých programoch)\n3. ZAKORENENÝ - má koreň (známy spoločný predok)\n4. NEZAKORENENÝ - bez určeného koreňa, len evolučné vzťahy'
+                    },
+                    {
+                        q: 'Čo je matica vzdialeností a ako sa vytvárajú evolučné vzdialenosti?',
+                        a: 'Tabuľka NxN evolučných vzdialeností medzi párovými sekvenciami.\nMODELY: Jukes-Cantor (rovnomerné mutácie), Kimura 2-parameter (tranzície vs transverzje), HKY (G-C obsah).'
+                    },
+                    {
+                        q: 'Popíšte Neighbor-Joining algoritmus.',
+                        a: 'Metóda na rýchly odhad stromu z matice vzdialeností.\nPROCES: 1. Vypočíta sa r-matrix (korekcia vzdialenosti), 2. Zvolí sa pár s minimálnym r, 3. Spojí sa do nového uzla, 4. Aktualizuje sa matica, 5. Opakuje sa.\nVÝHODA: Rýchly, zvyčajne správny, nie je potrebný evolučný model.'
+                    },
+                    {
+                        q: 'Čo je Maximum Likelihood a ako sa líši od NJ?',
+                        a: 'Štatistická metóda hľadajúca strom s NAJVÄČŠOU PRAVDEPODOBNOSŤOU pozorovania dát.\nLÍŠENÍ: NJ je rýchly (bez modelu), ML je pomalý ale presnejší, vyžaduje evolučný model (GTR, HKY).'
+                    },
+                    {
+                        q: 'Čo je Bootstrap a ako sa používa na validáciu stromu?',
+                        a: 'Metóda odhadu spoľahlivosti vetiev stromu. POSTUP: 1. Náhodne sa vyberú pozície z MSA (s opakovaním), 2. Skonstruuje sa nový strom, 3. Opakuje sa 100-1000x, 4. Počítajú sa frekvencie vetiev. VÝSLEDOK: Percento na vetvi (>70% = spoľahlivé).'
+                    },
+                    {
+                        q: 'Aké nástroje sa používajú pre MSA a stavbu stromov?',
+                        a: 'MSA: CLUSTAL (DnaML, DnaMP), MUSCLE (rýchlejší), MAFFT (pre >10k sekvencií).\nSTROM: PHYLIP (staršie), RaxML (ML), MrBayes (Bayesian), iTOL (vizualizácia).'
+                    }
+                ]
+            },
+            'Cviko 7': {
+                title: 'Úvod do strojového učenia - Python',
+                questions: [
+                    {
+                        q: 'Čo je strojové učenie a ako sa vzťahuje k bioinformatike?',
+                        a: 'Podmnožina AI umožňujúca systémom sa automaticky učiť z dát bez explicitného programovania.\nV BIOINFORMATIKE: Predpovedanie sekundárnej štruktúry proteínov, klasifikácia génov, detekcia patológií v obrazoch.'
+                    },
+                    {
+                        q: 'Popíšte tri základné typy strojového učenia s príkladmi.',
+                        a: '1. SUPERVIZOVANÉ - označené dáta, napr. klasifikácia chorôb (chorý/zdravý)\n2. NESUPERVIZOVANÉ - bez označení, napr. zhlukovanie vzoriek genómu\n3. REINFORCEMENT - učenie cez odmeňovanie, napr. robotika\n4. SEMI-SUPERVIZOVANÉ - málo označených dát, napr. proteomika'
+                    },
+                    {
+                        q: 'Čo je regresia vs klasifikácia a ako sa vybrať?',
+                        a: 'REGRESIA: Predpovedá SPOJITÉ hodnoty (napr. teplota, hladina glukózy). Model: Linear Regression, Polynomial Regression.\nKLASIFIKÁCIA: Predpovedá KATEGÓRIE (napr. druh proteínu A/B/C). Model: Logistic Regression, SVM, Random Forest.\nVÝBER: Spojitá výstup = regresia, diskrétna = klasifikácia.'
+                    },
+                    {
+                        q: 'Popíšte 5 základných krokov buildingu ML modelu.',
+                        a: '1. PRÍPRAVA DÁT - čistenie, normalizácia, removal outliers\n2. FEATURES SELECTION - výber relevantných premenných\n3. TRAIN/TEST SPLIT - typicky 80/20 alebo 70/30\n4. TRÉNOVANIE - model sa učí z trénovacích dát\n5. EVALUÁCIA - test na nezaradených dátach, metriky: Accuracy, Precision, Recall, F1-Score'
+                    },
+                    {
+                        q: 'Čo sú Confusion Matrix a metriky presnosti?',
+                        a: 'CONFUSION MATRIX: 2x2 tabuľka (True Positive, False Positive, True Negative, False Negative).\nMETRIKY:\n- Accuracy = (TP+TN)/(total)\n- Precision = TP/(TP+FP) - z predpovedaných, koľko je správnych\n- Recall = TP/(TP+FN) - z reálnych, koľko bolo správne\n- F1 = 2*(Precision*Recall)/(Precision+Recall) - priemer'
+                    },
+                    {
+                        q: 'Popíšte Support Vector Machine (SVM) a jeho jadra.',
+                        a: 'Algoritmus hľadá HYPERROVINU maximalizujúcu vzdialenosť od dát oboch tried (maximum margin).\nJADRÁ: Linear (pre lineárne dáta), RBF (Radial Basis Function - pre sferické clustery), Polynomial, Sigmoid.\nVÝHODA: Zvyčajne presný aj v vysokodimenzionálnom priestore.'
+                    },
+                    {
+                        q: 'Čo je Random Forest a prečo je efektívny?',
+                        a: 'Súbor rozhodovacích stromov (100-1000), každý s náhodným podmnožstvom údajov a features.\nPREDPOVEĎ: Väčšinové hlasovanie (klasifikácia) alebo priemer (regresia).\nVÝHODY: Robustný voči overfittingu, zvláda vysokorozmerné dáta, vychádza feature importance.'
+                    },
+                    {
+                        q: 'Popíšte K-Means zhlukovanie algoritmu.',
+                        a: 'Nesupervizovaný algoritmus delí dáta do K zhlukov.\nALGORITMUS: 1. Inicializuj K centroidy náhodne, 2. Prirad vzorky k najbližšiemu centroidu, 3. Prepočítaj centroidy ako priemer, 4. Opakuj až do konvergencie.\nVÝBER K: Elbow method (zostrojenie SSE vs K), Silhouette score.'
+                    },
+                    {
+                        q: 'Čo je overfitting a underfitting? Ako sa zabráni?',
+                        a: 'OVERFITTING: Model sa príliš prispôsobil trénovacím dátam, zle generalizuje. PRÍZNAKY: High train accuracy, low test accuracy.\nUNDERFITTING: Model je príliš jednoduchý. PRÍZNAKY: Low train aj test accuracy.\nZABRÁNENÍ: Regularizácia (L1, L2), Cross-validation, Early stopping, väčšie trénovacie dáta.'
+                    },
+                    {
+                        q: 'Akých Python knižníc sa používa v ML? Aké sú ich funkcie?',
+                        a: 'scikit-learn: Algoritmy (SVM, RF, KMeans), métriky, preprocessing\npandas: Manipulácia s dátami (DataFrame)\nnumpy: Numerické výpočty\nmatplotlib/seaborn: Vizualizácia\ntensorflow/pytorch: Hĺbokové učenie\nxgboost: Gradient Boosting'
+                    }
+                ]
+            }
+        };
+
+        let currentCourse = null;
+        let currentQuestion = 0;
+
+        // Inicializácia
+        function init() {
+            populateCourseBtns();
+            selectCourse('Prednáška 1');
+        }
+
+        // Naplnenie tlačidiel kurzov
+        function populateCourseBtns() {
+            const selector = document.getElementById('courseSelector');
+            Object.keys(quizData).forEach(course => {
+                const btn = document.createElement('button');
+                btn.className = 'course-btn';
+                btn.textContent = course;
+                btn.onclick = () => selectCourse(course);
+                selector.appendChild(btn);
+            });
+        }
+
+        // Výber kurzu
+        function selectCourse(course) {
+            currentCourse = course;
+            currentQuestion = 0;
+            updateCourseButtons();
+            displayQuestion();
+        }
+
+        // Aktualizácia aktívneho tlačidla
+        function updateCourseButtons() {
+            document.querySelectorAll('.course-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.textContent === currentCourse) {
+                    btn.classList.add('active');
+                }
+            });
+        }
+
+        // Zobrazenie otázky
+        function displayQuestion() {
+            const course = quizData[currentCourse];
+            const question = course.questions[currentQuestion];
+            
+            document.getElementById('courseTitle').textContent = course.title;
+            document.getElementById('questionText').textContent = `${currentQuestion + 1}. ${question.q}`;
+            document.getElementById('answerText').textContent = question.a;
+            
+            const total = course.questions.length;
+            document.getElementById('questionCounter').textContent = `${currentQuestion + 1}/${total}`;
+            document.getElementById('navInfo').textContent = `${currentQuestion + 1} z ${total}`;
+            
+            // Progress bar
+            const progress = ((currentQuestion + 1) / total) * 100;
+            document.getElementById('progressFill').style.width = progress + '%';
+            
+            // Skrytie odpovede
+            document.getElementById('answerContainer').classList.remove('revealed');
+            
+            // Update tlačidiel
+            document.getElementById('prevBtn').disabled = currentQuestion === 0;
+            document.getElementById('nextBtn').disabled = currentQuestion === total - 1;
+        }
+
+        // Navigácia
+        document.getElementById('prevBtn').onclick = () => {
+            if (currentQuestion > 0) {
+                currentQuestion--;
+                displayQuestion();
+            }
+        };
+
+        document.getElementById('nextBtn').onclick = () => {
+            const total = quizData[currentCourse].questions.length;
+            if (currentQuestion < total - 1) {
+                currentQuestion++;
+                displayQuestion();
+            }
+        };
+
+        // Kliknutie na odpoveď
+        document.getElementById('answerContainer').onclick = () => {
+            document.getElementById('answerContainer').classList.add('revealed');
+        };
+
+        // Klávesové skratky
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') document.getElementById('prevBtn').click();
+            if (e.key === 'ArrowRight') document.getElementById('nextBtn').click();
+        });
+
+        // Start
+        init();
+    </script>
+</body>
+</html>
